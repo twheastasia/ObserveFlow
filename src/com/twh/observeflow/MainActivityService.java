@@ -34,6 +34,7 @@ public class MainActivityService extends Service {
 	private UpdateUI update;
 	private long preTotalBytes;
 	private long currentTotalBytes;
+	
 	@Override
 	public IBinder onBind(Intent arg0) {
 		// TODO Auto-generated method stub
@@ -57,20 +58,11 @@ public class MainActivityService extends Service {
 	}
 
 	@Override
-	public boolean stopService(Intent name) {
-		// TODO Auto-generated method stub
-		removeView();
-		handler.removeCallbacksAndMessages(null);
-		updateThread.stop();
-		updateThread.destroy();
-		return super.stopService(name);
-	}
-
-	@Override
 	public void onDestroy() {
 		// TODO Auto-generated method stub
 		super.onDestroy();
 		removeView();
+		handler.removeCallbacksAndMessages(null);
 	}
 
 	/**
