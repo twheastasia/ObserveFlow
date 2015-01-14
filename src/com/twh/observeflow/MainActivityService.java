@@ -63,6 +63,7 @@ public class MainActivityService extends Service {
 		super.onDestroy();
 		removeView();
 		handler.removeCallbacksAndMessages(null);
+		System.out.println("------------------stop");
 	}
 
 	/**
@@ -73,12 +74,20 @@ public class MainActivityService extends Service {
 			windowManager.removeView(view);
 			viewAdded = false;
 		}
+		if(updateThread != null){
+			updateThread.interrupt();
+			updateThread=null;
+		}
+		if(update != null)
+		{
+			update.stopUpdateUI();
+		}
 	}
 	private void createFloatView() {
 		handler = new HandlerUI();
 		update = new UpdateUI();
 		updateThread = new Thread(update);
-		updateThread.start(); // 开户线程
+		updateThread.start(); // 开启线程
 		preTotalBytes = TrafficStats.getTotalRxBytes();
 		view = LayoutInflater.from(this).inflate(R.layout.flow_layout, null);
 		flow_text = (TextView) view.findViewById(R.id.flowspeed);
@@ -110,8 +119,7 @@ public class MainActivityService extends Service {
 					break;
 
 				case MotionEvent.ACTION_MOVE:
-					refreshView((int) (event.getRawX() - temp[0]),
-							(int) (event.getRawY() - temp[1]));
+					refreshView((int) (event.getRawX() - temp[0]), (int) (event.getRawY() - temp[1]));
 					break;
 				}
 				return true;
@@ -162,8 +170,11 @@ public class MainActivityService extends Service {
 	{
 		long totalRxBytesPerSecond;
 		currentTotalBytes = TrafficStats.getTotalRxBytes();
+		System.out.println("=====currentTotalBytes: " + currentTotalBytes);
 		totalRxBytesPerSecond = currentTotalBytes - preTotalBytes;
+		System.out.println("=====totalRxBytesPerSecond: " + totalRxBytesPerSecond);
 		preTotalBytes = currentTotalBytes;
+		System.out.println("=====preTotalBytes: " + preTotalBytes);
 //		Log.i("flow", totalRxBytesPerSecond+"");
 		if(totalRxBytesPerSecond < 1024){
 			flow_text.setText(totalRxBytesPerSecond + "B/S");
@@ -177,7 +188,7 @@ public class MainActivityService extends Service {
 	/**
 	 * 接受消息和处理消息
 	 * 
-	 * @author Administrator
+	 * @author twh
 	 * 
 	 */
 	class HandlerUI extends Handler {
@@ -211,29 +222,37 @@ public class MainActivityService extends Service {
 	/**
 	 * 更新悬浮窗的信息
 	 * 
-	 * @author Administrator
+	 * @author twh
 	 * 
 	 */
 	class UpdateUI implements Runnable {
 
+		private Thread mthread = new Thread();
 		@Override
-		public void run() {
+		public void run() 
+		{
 			// TODO Auto-generated method stub
 			// 如果没有中断就一直运行
-			while (!Thread.currentThread().isInterrupted()) {
+			while ( mthread != null && !mthread.isInterrupted()) 
+			{
 				Message msg = handler.obtainMessage();
 				msg.what = UPDATE_PIC; // 设置消息标识
 				handler.sendMessage(msg);
 				// 休眠1s
 				try {
-
 					Thread.sleep(1000);
-					
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
+		}
+		
+		
+		public void stopUpdateUI()
+		{
+			mthread.interrupt();
+			mthread = null;
 		}
 	}
 }
